@@ -1,3 +1,6 @@
+Meino soil temp · HTML
+コピー
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -6,186 +9,208 @@
 <title>幕別町明野 推定地温</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:sans-serif;background:#f5f4f0;color:#2c2c2a;padding:1.5rem;max-width:700px;margin:0 auto}
+body{font-family:sans-serif;background:#f5f4f0;color:#2c2c2a;padding:1.5rem;max-width:720px;margin:0 auto}
 h1{font-size:18px;font-weight:500;margin-bottom:4px}
 .sub{font-size:12px;color:#888780;margin-bottom:1.25rem}
+.info-bar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;background:#fff;border:0.5px solid #d3d1c7;border-radius:8px;padding:.6rem 1rem;margin-bottom:1.25rem;font-size:12px;color:#888780}
+.info-bar span{display:flex;align-items:center;gap:6px}
+.dot{width:8px;height:8px;border-radius:50%;background:#1D9E75;display:inline-block}
+.reload-btn{padding:4px 12px;border-radius:6px;border:0.5px solid #b4b2a9;background:transparent;font-size:12px;cursor:pointer;color:#2c2c2a}
+.reload-btn:hover{background:#f1efe8}
 .ctrl{display:flex;align-items:center;gap:10px;margin-bottom:1.5rem;flex-wrap:wrap;background:#fff;border:0.5px solid #d3d1c7;border-radius:8px;padding:.75rem 1rem}
 .ctrl label{font-size:13px;color:#5f5e5a;white-space:nowrap}
 .ctrl select{padding:5px 8px;border:0.5px solid #b4b2a9;border-radius:6px;background:#fff;color:#2c2c2a;font-size:13px}
-.ctrl button{padding:5px 14px;border-radius:6px;border:0.5px solid #b4b2a9;background:transparent;color:#2c2c2a;font-size:13px;cursor:pointer}
-.ctrl button:hover{background:#f1efe8}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:1.5rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:1.5rem}
 .card{background:#fff;border-radius:8px;padding:1rem;text-align:center;border:0.5px solid #d3d1c7}
 .card .lbl{font-size:11px;color:#888780;margin-bottom:4px}
-.card .val{font-size:24px;font-weight:500;color:#2c2c2a}
+.card .val{font-size:22px;font-weight:500;color:#2c2c2a}
 .card .s{font-size:11px;color:#b4b2a9;margin-top:3px}
 .sec{background:#fff;border:0.5px solid #d3d1c7;border-radius:12px;padding:1rem 1.25rem;margin-bottom:1rem}
 .sec-title{font-size:13px;font-weight:500;color:#888780;margin-bottom:8px}
 .row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:0.5px solid #d3d1c7;font-size:14px}
 .row:last-child{border-bottom:none}
 .row strong{font-weight:500}
-.legend{display:flex;gap:16px;margin-bottom:8px;font-size:12px;color:#888780}
-.dot{width:10px;height:10px;border-radius:2px;display:inline-block;margin-right:4px}
-.chart-wrap{position:relative;width:100%;height:240px;margin-bottom:1.25rem}
-.update-btn{cursor:pointer;padding:8px 20px;border-radius:8px;border:0.5px solid #b4b2a9;background:transparent;color:#2c2c2a;font-size:14px;margin-bottom:1rem}
-.update-btn:hover{background:#f1efe8}
+.legend{display:flex;gap:16px;margin-bottom:8px;font-size:12px;color:#888780;flex-wrap:wrap}
+.ldot{width:10px;height:10px;border-radius:2px;display:inline-block;margin-right:4px;vertical-align:middle}
+.chart-wrap{position:relative;width:100%;height:260px;margin-bottom:1.25rem}
+.status{text-align:center;padding:2rem 0;font-size:13px;color:#888780}
+.err-box{background:#FCEBEB;border-radius:8px;padding:.75rem 1rem;font-size:13px;color:#A32D2D;margin-bottom:1rem}
 .meta{font-size:11px;color:#b4b2a9;line-height:1.7}
 </style>
 </head>
 <body>
-
+ 
 <h1>幕別町明野 推定地温</h1>
-<div class="sub">2026年4月 — 帯広川西観測値より明野の地温を推定</div>
-
+<div class="sub" id="subtitle">読み込み中...</div>
+ 
+<div class="info-bar">
+  <span><span class="dot"></span>スプレッドシートから自動取得</span>
+  <span id="lastLoaded" style="color:#b4b2a9"></span>
+  <button class="reload-btn" onclick="loadData()">再読み込み</button>
+</div>
+ 
 <div class="ctrl">
   <label>積算開始日</label>
-  <select id="startSel"></select>
+  <select id="startSel"><option value="0">—</option></select>
   <span style="font-size:13px;color:#888780">から積算</span>
-  <button onclick="render()">適用</button>
 </div>
-
-<div class="grid">
-  <div class="card"><div class="lbl">推定地温 5cm</div><div class="val" id="v5">—</div><div class="s" id="d5s">—</div></div>
-  <div class="card"><div class="lbl">推定地温 10cm</div><div class="val" id="v10">—</div><div class="s" id="d10s">—</div></div>
-  <div class="card"><div class="lbl">推定地温 20cm</div><div class="val" id="v20">—</div><div class="s" id="d20s">—</div></div>
-  <div class="card"><div class="lbl">積算地温 5cm</div><div class="val" id="acc5card">—</div><div class="s" id="acc5sub">—</div></div>
+ 
+<div id="statusArea" class="status">データを読み込み中...</div>
+ 
+<div id="mainContent" style="display:none">
+  <div class="grid">
+    <div class="card"><div class="lbl">推定地温 5cm</div><div class="val" id="v5">—</div><div class="s" id="d5s">—</div></div>
+    <div class="card"><div class="lbl">推定地温 10cm</div><div class="val" id="v10">—</div><div class="s" id="d10s">—</div></div>
+    <div class="card"><div class="lbl">推定地温 20cm</div><div class="val" id="v20">—</div><div class="s" id="d20s">—</div></div>
+    <div class="card"><div class="lbl">積算地温 5cm</div><div class="val" id="acc5card">—</div><div class="s" id="acc5sub">—</div></div>
+  </div>
+ 
+  <div class="sec">
+    <div class="sec-title">深度別 推定地温（幕別町明野・最新日）</div>
+    <div class="row"><span>5cm 深</span><strong id="t5">—</strong></div>
+    <div class="row"><span>10cm 深</span><strong id="t10">—</strong></div>
+    <div class="row"><span>20cm 深</span><strong id="t20">—</strong></div>
+  </div>
+ 
+  <div class="sec">
+    <div class="sec-title" id="accumTitle">積算地温（明野推定地温より計算・基準温度0℃）</div>
+    <div class="row"><span>5cm 深</span><strong id="a5">—</strong></div>
+    <div class="row"><span>10cm 深</span><strong id="a10">—</strong></div>
+    <div class="row"><span>20cm 深</span><strong id="a20">—</strong></div>
+  </div>
+ 
+  <div class="legend">
+    <span><span class="ldot" style="background:#1D9E75"></span>5cm</span>
+    <span><span class="ldot" style="background:#378ADD"></span>10cm</span>
+    <span><span class="ldot" style="background:#D85A30"></span>20cm</span>
+  </div>
+  <div class="chart-wrap">
+    <canvas id="chart" role="img" aria-label="推定積算地温グラフ">積算地温グラフ</canvas>
+  </div>
+ 
+  <div class="meta" id="metaInfo"></div>
 </div>
-
-<div class="sec">
-  <div class="sec-title">深度別 推定地温（幕別町明野・最新日）</div>
-  <div class="row"><span>5cm 深</span><strong id="t5">—</strong></div>
-  <div class="row"><span>10cm 深</span><strong id="t10">—</strong></div>
-  <div class="row"><span>20cm 深</span><strong id="t20">—</strong></div>
-</div>
-
-<div class="sec">
-  <div class="sec-title" id="accumTitle">積算地温（明野推定地温より積算・基準温度0℃）</div>
-  <div class="row"><span>5cm 深</span><strong id="a5">—</strong></div>
-  <div class="row"><span>10cm 深</span><strong id="a10">—</strong></div>
-  <div class="row"><span>20cm 深</span><strong id="a20">—</strong></div>
-</div>
-
-<div class="legend">
-  <span><span class="dot" style="background:#1D9E75"></span>5cm</span>
-  <span><span class="dot" style="background:#378ADD"></span>10cm</span>
-  <span><span class="dot" style="background:#D85A30"></span>20cm</span>
-</div>
-<div class="chart-wrap">
-  <canvas id="chart"></canvas>
-</div>
-
-<button class="update-btn" onclick="alert('最新データが必要な場合はClaudeに「最新データを更新して」とお伝えください。')">最新データを取得</button>
-
-<div class="meta">
-  推定方法: 帯広川西の実測地中温度に深度補正と位置補正（明野まで約15km・台地地形補正）を適用。<br>
-  5cm = ×0.97 − 0.3℃ / 10cm = ×0.88 − 0.4℃ / 20cm = ×0.74 − 0.5℃<br>
-  積算地温は明野推定地温をもとに計算。土壌水分・マルチの有無により±2℃程度変動します。<br>
-  データ出典: 帯広市農業技術センター 気象観測システム（川西地点）
-</div>
-
+ 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
-const rawData = [
-  {date:'4/1',  real:6.9},
-  {date:'4/2',  real:4.7},
-  {date:'4/3',  real:4.9},
-  {date:'4/4',  real:5.9},
-  {date:'4/5',  real:9.5},
-  {date:'4/6',  real:6.0},
-  {date:'4/7',  real:4.8},
-  {date:'4/8',  real:4.8},
-  {date:'4/9',  real:6.8},
-  {date:'4/10', real:8.3},
-  {date:'4/11', real:8.6},
-  {date:'4/12', real:5.8},
-  {date:'4/13', real:5.5},
-  {date:'4/14', real:6.9},
-  {date:'4/15', real:6.5},
-  {date:'4/16', real:7.7},
-  {date:'4/17', real:8.2},
-  {date:'4/18', real:9.8},
-  {date:'4/19', real:8.8},
-  {date:'4/20', real:7.9},
-];
-
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbzbpweZGLB7MsKqDByFGJOK6_a6gAhuNfCmwCQfDQmB-pPro4rAvA_ZBdOI6Mw16ARxdA/exec';
+ 
+let rawData = [];
+let chartInst = null;
+ 
 function est(real, d){
-  const c = {5:{r:0.97,b:-0.3}, 10:{r:0.88,b:-0.4}, 20:{r:0.74,b:-0.5}}[d];
+  const c = {5:{r:0.97,b:-0.3},10:{r:0.88,b:-0.4},20:{r:0.74,b:-0.5}}[d];
   return +(real * c.r + c.b).toFixed(1);
 }
-
 function calcAccum(arr, startIdx){
-  let s = 0;
-  return arr.map((v, i) => {
-    if(i >= startIdx && v > 0) s += v;
-    return +s.toFixed(1);
-  });
+  let s=0;
+  return arr.map((v,i)=>{ if(i>=startIdx && v>0) s+=v; return +s.toFixed(1); });
 }
-
-const e5  = rawData.map(d => est(d.real, 5));
-const e10 = rawData.map(d => est(d.real, 10));
-const e20 = rawData.map(d => est(d.real, 20));
-
-// 積算開始日セレクトボックスを生成
-const sel = document.getElementById('startSel');
-rawData.forEach((d, i) => {
-  const opt = document.createElement('option');
-  opt.value = i;
-  opt.textContent = '2026/' + d.date;
-  sel.appendChild(opt);
-});
-sel.value = 0;
-
-let chartInst = null;
-
+ 
+async function loadData(){
+  const now = new Date();
+  const year  = now.getFullYear();
+  const month = String(now.getMonth()+1).padStart(2,'0');
+ 
+  document.getElementById('statusArea').style.display = '';
+  document.getElementById('statusArea').textContent = 'データを読み込み中...';
+  document.getElementById('mainContent').style.display = 'none';
+ 
+  try {
+    const res = await fetch(`${GAS_URL}?year=${year}&month=${month}`);
+    const json = await res.json();
+ 
+    if(!json.data || !json.data.length){
+      document.getElementById('statusArea').textContent = 'データがありません。';
+      return;
+    }
+ 
+    rawData = json.data.map(d => ({
+      date: String(d.date).slice(5),
+      real: parseFloat(d.soilTemp)
+    }));
+ 
+    const sel = document.getElementById('startSel');
+    sel.innerHTML = '';
+    rawData.forEach((d,i)=>{
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = year+'/'+d.date;
+      sel.appendChild(opt);
+    });
+    sel.value = 0;
+    sel.onchange = render;
+ 
+    document.getElementById('subtitle').textContent =
+      `${year}年${parseInt(month)}月 — 帯広川西観測値より明野の地温を推定`;
+    document.getElementById('lastLoaded').textContent =
+      '読み込み: '+now.toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'});
+    document.getElementById('statusArea').style.display = 'none';
+    document.getElementById('mainContent').style.display = '';
+ 
+    render();
+ 
+  } catch(e) {
+    document.getElementById('statusArea').innerHTML =
+      `<div class="err-box">読み込みエラー: ${e.message}</div>`;
+  }
+}
+ 
 function render(){
-  const startIdx = parseInt(sel.value);
-  const startLabel = rawData[startIdx].date;
+  const startIdx = parseInt(document.getElementById('startSel').value);
   const n = rawData.length - 1;
   const ld = rawData[n].date;
-
+  const startLabel = rawData[startIdx].date;
+ 
+  const e5  = rawData.map(d=>est(d.real,5));
+  const e10 = rawData.map(d=>est(d.real,10));
+  const e20 = rawData.map(d=>est(d.real,20));
   const a5  = calcAccum(e5,  startIdx);
   const a10 = calcAccum(e10, startIdx);
   const a20 = calcAccum(e20, startIdx);
-
-  // 最新地温カード・テーブル
-  document.getElementById('v5').textContent  = document.getElementById('t5').textContent  = e5[n]  + '℃';
-  document.getElementById('v10').textContent = document.getElementById('t10').textContent = e10[n] + '℃';
-  document.getElementById('v20').textContent = document.getElementById('t20').textContent = e20[n] + '℃';
-  ['d5s','d10s','d20s'].forEach(id => document.getElementById(id).textContent = '最新: ' + ld);
-
-  // 積算カード・テーブル
-  document.getElementById('acc5card').textContent = a5[n] + '℃·日';
-  document.getElementById('acc5sub').textContent  = startLabel + '〜' + ld;
-  document.getElementById('a5').textContent  = a5[n]  + '℃·日';
-  document.getElementById('a10').textContent = a10[n] + '℃·日';
-  document.getElementById('a20').textContent = a20[n] + '℃·日';
+ 
+  document.getElementById('v5').textContent  = document.getElementById('t5').textContent  = e5[n]+'℃';
+  document.getElementById('v10').textContent = document.getElementById('t10').textContent = e10[n]+'℃';
+  document.getElementById('v20').textContent = document.getElementById('t20').textContent = e20[n]+'℃';
+  ['d5s','d10s','d20s'].forEach(id=>document.getElementById(id).textContent='最新: '+ld);
+ 
+  document.getElementById('acc5card').textContent = a5[n]+'℃·日';
+  document.getElementById('acc5sub').textContent  = startLabel+'〜'+ld;
+  document.getElementById('a5').textContent  = a5[n]+'℃·日';
+  document.getElementById('a10').textContent = a10[n]+'℃·日';
+  document.getElementById('a20').textContent = a20[n]+'℃·日';
   document.getElementById('accumTitle').textContent =
-    '積算地温（' + startLabel + ' 起算・基準温度0℃・明野推定地温より計算）';
-
-  // グラフ（積算推移）
-  if(chartInst){ chartInst.destroy(); chartInst = null; }
-  chartInst = new Chart(document.getElementById('chart'), {
-    type: 'line',
-    data: {
-      labels: rawData.map(d => d.date),
-      datasets: [
-        {label:'5cm',  data:a5,  borderColor:'#1D9E75', backgroundColor:'rgba(29,158,117,0.08)', tension:0.3, fill:true, pointRadius:2},
-        {label:'10cm', data:a10, borderColor:'#378ADD', backgroundColor:'rgba(55,138,221,0.08)', tension:0.3, fill:true, pointRadius:2},
-        {label:'20cm', data:a20, borderColor:'#D85A30', backgroundColor:'rgba(216,90,48,0.08)',  tension:0.3, fill:true, pointRadius:2},
+    '積算地温（'+startLabel+' 起算・基準温度0℃・明野推定地温より計算）';
+ 
+  if(chartInst){ chartInst.destroy(); chartInst=null; }
+  chartInst = new Chart(document.getElementById('chart'),{
+    type:'line',
+    data:{
+      labels: rawData.map(d=>d.date),
+      datasets:[
+        {label:'5cm',  data:a5,  borderColor:'#1D9E75',backgroundColor:'rgba(29,158,117,0.08)',tension:0.3,fill:true,pointRadius:2,borderWidth:2},
+        {label:'10cm', data:a10, borderColor:'#378ADD',backgroundColor:'rgba(55,138,221,0.08)',tension:0.3,fill:true,pointRadius:2,borderWidth:2},
+        {label:'20cm', data:a20, borderColor:'#D85A30',backgroundColor:'rgba(216,90,48,0.08)', tension:0.3,fill:true,pointRadius:2,borderWidth:2},
       ]
     },
     options:{
-      responsive:true, maintainAspectRatio:false,
+      responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false}},
       scales:{
-        x:{ticks:{font:{size:11}, maxRotation:45, autoSkip:true}},
-        y:{ticks:{font:{size:11}, callback:v=>v+'℃·日'}, title:{display:true, text:'積算地温 (℃·日)', font:{size:11}}}
+        x:{ticks:{font:{size:11},maxRotation:45,autoSkip:true}},
+        y:{ticks:{font:{size:11},callback:v=>v+'℃·日'},title:{display:true,text:'積算地温 (℃·日)',font:{size:11}}}
       }
     }
   });
+ 
+  document.getElementById('metaInfo').innerHTML =
+    `推定方法: 帯広川西の実測地中温度に深度補正と位置補正（明野まで約15km）を適用。<br>
+    5cm=×0.97−0.3℃ / 10cm=×0.88−0.4℃ / 20cm=×0.74−0.5℃<br>
+    積算は明野推定地温をもとに計算。土壌水分・マルチの有無により±2℃程度変動します。<br>
+    データ出典: 帯広市農業技術センター 気象観測システム（川西地点）`;
 }
-
-render();
+ 
+loadData();
 </script>
 </body>
 </html>
