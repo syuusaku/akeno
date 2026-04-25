@@ -1,6 +1,3 @@
-Meino soil temp · HTML
-コピー
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -17,6 +14,14 @@ h1{font-size:18px;font-weight:500;margin-bottom:4px}
 .dot{width:8px;height:8px;border-radius:50%;background:#1D9E75;display:inline-block}
 .reload-btn{padding:4px 12px;border-radius:6px;border:0.5px solid #b4b2a9;background:transparent;font-size:12px;cursor:pointer;color:#2c2c2a}
 .reload-btn:hover{background:#f1efe8}
+ 
+/* タブ */
+.tabs{display:flex;gap:4px;margin-bottom:1.25rem}
+.tab{padding:7px 18px;border-radius:8px;border:0.5px solid #d3d1c7;background:#fff;font-size:13px;cursor:pointer;color:#888780}
+.tab.active{background:#2c2c2a;color:#fff;border-color:#2c2c2a}
+.tab-content{display:none}
+.tab-content.active{display:block}
+ 
 .ctrl{display:flex;align-items:center;gap:10px;margin-bottom:1.5rem;flex-wrap:wrap;background:#fff;border:0.5px solid #d3d1c7;border-radius:8px;padding:.75rem 1rem}
 .ctrl label{font-size:13px;color:#5f5e5a;white-space:nowrap}
 .ctrl select{padding:5px 8px;border:0.5px solid #b4b2a9;border-radius:6px;background:#fff;color:#2c2c2a;font-size:13px}
@@ -46,49 +51,79 @@ h1{font-size:18px;font-weight:500;margin-bottom:4px}
 <div class="info-bar">
   <span><span class="dot"></span>スプレッドシートから自動取得</span>
   <span id="lastLoaded" style="color:#b4b2a9"></span>
-  <button class="reload-btn" onclick="loadData()">再読み込み</button>
+  <button class="reload-btn" onclick="loadAll()">再読み込み</button>
 </div>
  
-<div class="ctrl">
-  <label>積算開始日</label>
-  <select id="startSel"><option value="0">—</option></select>
-  <span style="font-size:13px;color:#888780">から積算</span>
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('daily')">日別・積算</button>
+  <button class="tab" onclick="switchTab('hourly')">今日の時間別</button>
 </div>
  
-<div id="statusArea" class="status">データを読み込み中...</div>
- 
-<div id="mainContent" style="display:none">
-  <div class="grid">
-    <div class="card"><div class="lbl">推定地温 5cm</div><div class="val" id="v5">—</div><div class="s" id="d5s">—</div></div>
-    <div class="card"><div class="lbl">推定地温 10cm</div><div class="val" id="v10">—</div><div class="s" id="d10s">—</div></div>
-    <div class="card"><div class="lbl">推定地温 20cm</div><div class="val" id="v20">—</div><div class="s" id="d20s">—</div></div>
-    <div class="card"><div class="lbl">積算地温 5cm</div><div class="val" id="acc5card">—</div><div class="s" id="acc5sub">—</div></div>
+<!-- 日別・積算タブ -->
+<div id="tab-daily" class="tab-content active">
+  <div class="ctrl">
+    <label>積算開始日</label>
+    <select id="startSel"><option value="0">—</option></select>
+    <span style="font-size:13px;color:#888780">から積算</span>
   </div>
  
-  <div class="sec">
-    <div class="sec-title">深度別 推定地温（幕別町明野・最新日）</div>
-    <div class="row"><span>5cm 深</span><strong id="t5">—</strong></div>
-    <div class="row"><span>10cm 深</span><strong id="t10">—</strong></div>
-    <div class="row"><span>20cm 深</span><strong id="t20">—</strong></div>
+  <div id="statusDaily" class="status">データを読み込み中...</div>
+  <div id="mainDaily" style="display:none">
+    <div class="grid">
+      <div class="card"><div class="lbl">推定地温 5cm</div><div class="val" id="v5">—</div><div class="s" id="d5s">—</div></div>
+      <div class="card"><div class="lbl">推定地温 10cm</div><div class="val" id="v10">—</div><div class="s" id="d10s">—</div></div>
+      <div class="card"><div class="lbl">推定地温 20cm</div><div class="val" id="v20">—</div><div class="s" id="d20s">—</div></div>
+      <div class="card"><div class="lbl">積算地温 5cm</div><div class="val" id="acc5card">—</div><div class="s" id="acc5sub">—</div></div>
+    </div>
+    <div class="sec">
+      <div class="sec-title">深度別 推定地温（幕別町明野・最新日）</div>
+      <div class="row"><span>5cm 深</span><strong id="t5">—</strong></div>
+      <div class="row"><span>10cm 深</span><strong id="t10">—</strong></div>
+      <div class="row"><span>20cm 深</span><strong id="t20">—</strong></div>
+    </div>
+    <div class="sec">
+      <div class="sec-title" id="accumTitle">積算地温（明野推定地温より計算・基準温度0℃）</div>
+      <div class="row"><span>5cm 深</span><strong id="a5">—</strong></div>
+      <div class="row"><span>10cm 深</span><strong id="a10">—</strong></div>
+      <div class="row"><span>20cm 深</span><strong id="a20">—</strong></div>
+    </div>
+    <div class="legend">
+      <span><span class="ldot" style="background:#1D9E75"></span>5cm</span>
+      <span><span class="ldot" style="background:#378ADD"></span>10cm</span>
+      <span><span class="ldot" style="background:#D85A30"></span>20cm</span>
+    </div>
+    <div class="chart-wrap"><canvas id="chartDaily"></canvas></div>
+    <div class="meta">
+      推定方法: 帯広川西の実測地中温度に深度補正と位置補正（明野まで約15km）を適用。<br>
+      5cm=×0.97−0.3℃ / 10cm=×0.88−0.4℃ / 20cm=×0.74−0.5℃<br>
+      積算は明野推定地温をもとに計算。土壌水分・マルチの有無により±2℃程度変動します。<br>
+      データ出典: 帯広市農業技術センター 気象観測システム（川西地点）
+    </div>
   </div>
+</div>
  
-  <div class="sec">
-    <div class="sec-title" id="accumTitle">積算地温（明野推定地温より計算・基準温度0℃）</div>
-    <div class="row"><span>5cm 深</span><strong id="a5">—</strong></div>
-    <div class="row"><span>10cm 深</span><strong id="a10">—</strong></div>
-    <div class="row"><span>20cm 深</span><strong id="a20">—</strong></div>
+<!-- 時間別タブ -->
+<div id="tab-hourly" class="tab-content">
+  <div id="statusHourly" class="status">データを読み込み中...</div>
+  <div id="mainHourly" style="display:none">
+    <div class="grid">
+      <div class="card"><div class="lbl">現在の推定地温 5cm</div><div class="val" id="hv5">—</div><div class="s" id="htime">—</div></div>
+      <div class="card"><div class="lbl">本日最高 推定地温 5cm</div><div class="val" id="hmax5">—</div><div class="s" id="hmaxtime">—</div></div>
+      <div class="card"><div class="lbl">現在の気温（川西）</div><div class="val" id="hair">—</div><div class="s">実測値</div></div>
+      <div class="card"><div class="lbl">本日最低 推定地温 5cm</div><div class="val" id="hmin5">—</div><div class="s" id="hmintime">—</div></div>
+    </div>
+    <div class="legend">
+      <span><span class="ldot" style="background:#888780;opacity:.7"></span>気温（川西実測）</span>
+      <span><span class="ldot" style="background:#1D9E75"></span>推定地温 5cm</span>
+      <span><span class="ldot" style="background:#378ADD"></span>推定地温 10cm</span>
+      <span><span class="ldot" style="background:#D85A30"></span>推定地温 20cm</span>
+    </div>
+    <div class="chart-wrap"><canvas id="chartHourly"></canvas></div>
+    <div class="meta">
+      今日の川西観測所の時間別データをもとに明野の推定地温を計算。ページ読み込み時点のデータを表示。<br>
+      データ出典: 帯広市農業技術センター 気象観測システム（川西地点・時間データ）
+    </div>
   </div>
- 
-  <div class="legend">
-    <span><span class="ldot" style="background:#1D9E75"></span>5cm</span>
-    <span><span class="ldot" style="background:#378ADD"></span>10cm</span>
-    <span><span class="ldot" style="background:#D85A30"></span>20cm</span>
-  </div>
-  <div class="chart-wrap">
-    <canvas id="chart" role="img" aria-label="推定積算地温グラフ">積算地温グラフ</canvas>
-  </div>
- 
-  <div class="meta" id="metaInfo"></div>
 </div>
  
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
@@ -96,7 +131,8 @@ h1{font-size:18px;font-weight:500;margin-bottom:4px}
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbzbpweZGLB7MsKqDByFGJOK6_a6gAhuNfCmwCQfDQmB-pPro4rAvA_ZBdOI6Mw16ARxdA/exec';
  
 let rawData = [];
-let chartInst = null;
+let chartDaily = null;
+let chartHourly = null;
  
 function est(real, d){
   const c = {5:{r:0.97,b:-0.3},10:{r:0.88,b:-0.4},20:{r:0.74,b:-0.5}}[d];
@@ -107,28 +143,40 @@ function calcAccum(arr, startIdx){
   return arr.map((v,i)=>{ if(i>=startIdx && v>0) s+=v; return +s.toFixed(1); });
 }
  
-async function loadData(){
+function switchTab(tab){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+  event.target.classList.add('active');
+}
+ 
+async function loadAll(){
+  const now = new Date();
+  document.getElementById('lastLoaded').textContent =
+    '読み込み: '+now.toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'});
+  await Promise.all([loadDaily(), loadHourly()]);
+}
+ 
+// ============================================================
+// 日別・積算
+// ============================================================
+async function loadDaily(){
   const now = new Date();
   const year  = now.getFullYear();
   const month = String(now.getMonth()+1).padStart(2,'0');
  
-  document.getElementById('statusArea').style.display = '';
-  document.getElementById('statusArea').textContent = 'データを読み込み中...';
-  document.getElementById('mainContent').style.display = 'none';
+  document.getElementById('statusDaily').style.display = '';
+  document.getElementById('statusDaily').textContent = 'データを読み込み中...';
+  document.getElementById('mainDaily').style.display = 'none';
  
   try {
     const res = await fetch(`${GAS_URL}?year=${year}&month=${month}`);
     const json = await res.json();
- 
     if(!json.data || !json.data.length){
-      document.getElementById('statusArea').textContent = 'データがありません。';
+      document.getElementById('statusDaily').textContent = 'データがありません。';
       return;
     }
- 
-    rawData = json.data.map(d => ({
-      date: String(d.date).slice(5),
-      real: parseFloat(d.soilTemp)
-    }));
+    rawData = json.data.map(d=>({ date:String(d.date).slice(5), real:parseFloat(d.soilTemp) }));
  
     const sel = document.getElementById('startSel');
     sel.innerHTML = '';
@@ -139,24 +187,19 @@ async function loadData(){
       sel.appendChild(opt);
     });
     sel.value = 0;
-    sel.onchange = render;
+    sel.onchange = renderDaily;
  
     document.getElementById('subtitle').textContent =
       `${year}年${parseInt(month)}月 — 帯広川西観測値より明野の地温を推定`;
-    document.getElementById('lastLoaded').textContent =
-      '読み込み: '+now.toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'});
-    document.getElementById('statusArea').style.display = 'none';
-    document.getElementById('mainContent').style.display = '';
- 
-    render();
- 
+    document.getElementById('statusDaily').style.display = 'none';
+    document.getElementById('mainDaily').style.display = '';
+    renderDaily();
   } catch(e) {
-    document.getElementById('statusArea').innerHTML =
-      `<div class="err-box">読み込みエラー: ${e.message}</div>`;
+    document.getElementById('statusDaily').innerHTML = `<div class="err-box">読み込みエラー: ${e.message}</div>`;
   }
 }
  
-function render(){
+function renderDaily(){
   const startIdx = parseInt(document.getElementById('startSel').value);
   const n = rawData.length - 1;
   const ld = rawData[n].date;
@@ -173,7 +216,6 @@ function render(){
   document.getElementById('v10').textContent = document.getElementById('t10').textContent = e10[n]+'℃';
   document.getElementById('v20').textContent = document.getElementById('t20').textContent = e20[n]+'℃';
   ['d5s','d10s','d20s'].forEach(id=>document.getElementById(id).textContent='最新: '+ld);
- 
   document.getElementById('acc5card').textContent = a5[n]+'℃·日';
   document.getElementById('acc5sub').textContent  = startLabel+'〜'+ld;
   document.getElementById('a5').textContent  = a5[n]+'℃·日';
@@ -182,8 +224,8 @@ function render(){
   document.getElementById('accumTitle').textContent =
     '積算地温（'+startLabel+' 起算・基準温度0℃・明野推定地温より計算）';
  
-  if(chartInst){ chartInst.destroy(); chartInst=null; }
-  chartInst = new Chart(document.getElementById('chart'),{
+  if(chartDaily){ chartDaily.destroy(); chartDaily=null; }
+  chartDaily = new Chart(document.getElementById('chartDaily'),{
     type:'line',
     data:{
       labels: rawData.map(d=>d.date),
@@ -202,15 +244,74 @@ function render(){
       }
     }
   });
- 
-  document.getElementById('metaInfo').innerHTML =
-    `推定方法: 帯広川西の実測地中温度に深度補正と位置補正（明野まで約15km）を適用。<br>
-    5cm=×0.97−0.3℃ / 10cm=×0.88−0.4℃ / 20cm=×0.74−0.5℃<br>
-    積算は明野推定地温をもとに計算。土壌水分・マルチの有無により±2℃程度変動します。<br>
-    データ出典: 帯広市農業技術センター 気象観測システム（川西地点）`;
 }
  
-loadData();
+// ============================================================
+// 時間別
+// ============================================================
+async function loadHourly(){
+  document.getElementById('statusHourly').style.display = '';
+  document.getElementById('statusHourly').textContent = 'データを読み込み中...';
+  document.getElementById('mainHourly').style.display = 'none';
+ 
+  try {
+    const res = await fetch(`${GAS_URL}?type=hourly`);
+    const json = await res.json();
+    if(!json.data || !json.data.length){
+      document.getElementById('statusHourly').textContent = 'データがありません。';
+      return;
+    }
+ 
+    const data = json.data;
+    const labels   = data.map(d=>d.datetime.slice(11,16));
+    const airTemps = data.map(d=>d.airTemp);
+    const soil5    = data.map(d=>est(d.soilTemp,5));
+    const soil10   = data.map(d=>est(d.soilTemp,10));
+    const soil20   = data.map(d=>est(d.soilTemp,20));
+ 
+    // 最新・最高・最低
+    const last = data.length - 1;
+    const maxIdx = soil5.indexOf(Math.max(...soil5));
+    const minIdx = soil5.indexOf(Math.min(...soil5));
+ 
+    document.getElementById('hv5').textContent    = soil5[last]+'℃';
+    document.getElementById('htime').textContent  = labels[last]+'時点';
+    document.getElementById('hair').textContent   = airTemps[last]+'℃';
+    document.getElementById('hmax5').textContent  = soil5[maxIdx]+'℃';
+    document.getElementById('hmaxtime').textContent = labels[maxIdx];
+    document.getElementById('hmin5').textContent  = soil5[minIdx]+'℃';
+    document.getElementById('hmintime').textContent = labels[minIdx];
+ 
+    document.getElementById('statusHourly').style.display = 'none';
+    document.getElementById('mainHourly').style.display = '';
+ 
+    if(chartHourly){ chartHourly.destroy(); chartHourly=null; }
+    chartHourly = new Chart(document.getElementById('chartHourly'),{
+      type:'line',
+      data:{
+        labels,
+        datasets:[
+          {label:'気温（川西実測）',data:airTemps,borderColor:'#888780',backgroundColor:'transparent',tension:0.3,fill:false,pointRadius:2,borderWidth:1.5,borderDash:[4,3]},
+          {label:'推定地温 5cm',   data:soil5,   borderColor:'#1D9E75',backgroundColor:'rgba(29,158,117,0.08)',tension:0.3,fill:true,pointRadius:2,borderWidth:2},
+          {label:'推定地温 10cm',  data:soil10,  borderColor:'#378ADD',backgroundColor:'rgba(55,138,221,0.08)',tension:0.3,fill:true,pointRadius:2,borderWidth:2},
+          {label:'推定地温 20cm',  data:soil20,  borderColor:'#D85A30',backgroundColor:'rgba(216,90,48,0.08)', tension:0.3,fill:true,pointRadius:2,borderWidth:2},
+        ]
+      },
+      options:{
+        responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false}},
+        scales:{
+          x:{ticks:{font:{size:11},maxRotation:45,autoSkip:true}},
+          y:{ticks:{font:{size:11},callback:v=>v+'℃'},title:{display:true,text:'温度 (℃)',font:{size:11}}}
+        }
+      }
+    });
+  } catch(e) {
+    document.getElementById('statusHourly').innerHTML = `<div class="err-box">読み込みエラー: ${e.message}</div>`;
+  }
+}
+ 
+loadAll();
 </script>
 </body>
 </html>
